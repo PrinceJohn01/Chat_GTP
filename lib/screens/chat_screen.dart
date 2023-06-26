@@ -1,6 +1,11 @@
+import 'dart:developer';
+
 import 'package:chat_gtp/constants/constant.dart';
+import 'package:chat_gtp/services/api_service.dart';
 import 'package:chat_gtp/services/assets_manager.dart';
+import 'package:chat_gtp/services/services.dart';
 import 'package:chat_gtp/widgets/chat_widget.dart';
+import 'package:chat_gtp/widgets/text_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
@@ -37,7 +42,9 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       title: const Text('Prince ChatGPT'),actions: [
         IconButton(
-            onPressed: (){},
+            onPressed: () async {
+              await Services.showModalSheet(context: context);
+            },
             icon: const Icon(Icons.more_vert_rounded, color: Colors.white,))],
       ),
       body:SafeArea(child: Column(children: [
@@ -45,7 +52,11 @@ class _ChatScreenState extends State<ChatScreen> {
           child: ListView.builder(
               itemCount: 6,
               itemBuilder: (context, index){
-            return const ChatWidget();
+            return  ChatWidget(
+              msg: chatMessages[index]["msg"].toString(),
+              chatIndex: int.parse(
+                  chatMessages[index]["chatIndex"].toString()),
+            );
           }),
         ),
         if(_isTyping) ... [
@@ -71,7 +82,13 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     IconButton(
-                        onPressed: (){},
+                        onPressed: () async{
+                        try{
+                          await ApiService.getModels();
+                        }catch(error){
+                          print("error $error");
+                        }
+                         },
                         icon: const Icon(Icons.send, color: Colors.white,))
                    ],
                   ),
