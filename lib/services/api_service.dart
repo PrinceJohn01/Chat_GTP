@@ -1,11 +1,14 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 
 import 'package:chat_gtp/constants/api_consts.dart';
+import 'package:chat_gtp/models/chat_model.dart';
+import 'package:chat_gtp/models/models_model.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService{
-  static Future<void> getModels() async{
+  static Future<List<ModelsModel>> getModels() async{
 try{
   var response = await http.get(
      Uri.parse("BASE_URL/models"),
@@ -13,12 +16,55 @@ try{
   );
   Map jsonResponse = jsonDecode(response.body);
   if (jsonResponse['error'] != null){
-    print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
+   // print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
     throw HttpException(jsonResponse['error']["message"]);
   }
-  print("jsonResponse $jsonResponse");
+  //print("jsonResponse $jsonResponse");
+  List temp = [];
+  for (var value in jsonResponse["data"]){
+    temp.add(value);
+    log ("temp ${value["id"]}");
+  }
+  return ModelsModel.modelsFromSnapshot(temp);
 }catch(error){
- print("error &error");
+    log("error $error");
+    rethrow;   
    }
   }
+  static Future<List<ChatModel>> sendMessage(
+      {required String message, required String modelId}) async{
+    try{
+      var response = await http.post(
+          Uri.parse("BASE_URL/completions"),
+          headers: {'Authorization': 'Bearer $API_KEY',
+            "Content-Type": "application/json"
+          },
+          body: jsonEncode({
+            "Model": modelId,
+            "prompt": message,
+            "max_tokens": 10000000,
+            },
+          ),
+      );
+      Map jsonResponse = jsonDecode(response.body);
+      if (jsonResponse['error'] != null){
+        // print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
+        throw HttpException(jsonResponse['error']["message"]);
+      }
+      List<ChatModel> chatList = [];
+      if(jsonResponse["choices"].lenght > 0){
+       // log("jsonResponse[choices]text ${jsonResponse["choices"][0]["text"]}");
+        chatList = List.generate(jsonResponse["choices"].lenght,
+                (index) => ChatModel(
+                    msg: jsonResponse["choices"][index]["text"],
+                    chatIndex: 1,
+                ),
+           );
+         }
+      return chatList;
+      }catch(error){
+      log("error $error");
+      rethrow;
+     }
+    }
 }

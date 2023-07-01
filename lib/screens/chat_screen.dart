@@ -5,10 +5,11 @@ import 'package:chat_gtp/services/api_service.dart';
 import 'package:chat_gtp/services/assets_manager.dart';
 import 'package:chat_gtp/services/services.dart';
 import 'package:chat_gtp/widgets/chat_widget.dart';
-import 'package:chat_gtp/widgets/text_widget.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../models/chat_model.dart';
+import '../providers/models_provider.dart';
 
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
@@ -18,7 +19,7 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  final bool _isTyping = true;
+   bool _isTyping = false;
 
   late TextEditingController textEditingController;
   @override
@@ -31,8 +32,10 @@ class _ChatScreenState extends State<ChatScreen> {
     textEditingController.dispose();
     super.dispose();
   }
+  List<ChatModel> chatList = [];
   @override
   Widget build(BuildContext context) {
+    final modelsProvider = Provider.of<ModelsProvider>(context);
     return  Scaffold(
       appBar: AppBar(
         elevation: 2,
@@ -50,21 +53,22 @@ class _ChatScreenState extends State<ChatScreen> {
       body:SafeArea(child: Column(children: [
         Flexible(
           child: ListView.builder(
-              itemCount: 6,
+              itemCount: chatList.length,
               itemBuilder: (context, index){
             return  ChatWidget(
-              msg: chatMessages[index]["msg"].toString(),
-              chatIndex: int.parse(
-                  chatMessages[index]["chatIndex"].toString()),
+              msg: chatList[index].msg,
+              chatIndex:
+                  chatList[index].chatIndex,
             );
           }),
         ),
         if(_isTyping) ... [
            const SpinKitThreeBounce(
              color: Colors.white,
-             size: 8,
-               ),
-          const SizedBox(height: 15,),
+             size: 18,
+               ), ],
+          const SizedBox(
+            height: 15,),
           Material(
             color: cardColor,
             child: Padding(
@@ -74,7 +78,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: TextField(
                     style: const TextStyle(color: Colors.white),
                     controller: textEditingController,
-                    onSubmitted: (value){
+                    onSubmitted: (value) async {
+                      await sendMessageFCT(modelsProvider: modelsProvider,);
                     },
                     decoration: const InputDecoration.collapsed(
                         hintText: 'How Can I Help You',
@@ -82,22 +87,37 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                     IconButton(
-                        onPressed: () async{
-                        try{
-                          await ApiService.getModels();
-                        }catch(error){
-                          print("error $error");
-                        }
-                         },
-                        icon: const Icon(Icons.send, color: Colors.white,))
+                        onPressed: () async {
+                          await sendMessageFCT(modelsProvider: modelsProvider,);
+                          },
+                        icon: const Icon(
+                          Icons.send,
+                          color: Colors.white,))
                    ],
                   ),
             ),
           ),
              ]
-           ],
          ),
       ),
     );
   }
+  Future<void> sendMessageFCT ({required ModelsProvider modelsProvider})  async{
+                          try{
+                             setState(() {
+                               _isTyping = true;
+                            });
+                           chatList = await ApiService.sendMessage(
+                              message: textEditingController.text,
+                              modelId: modelsProvider.getCurrentModel,
+                            );
+                           setState(() {});
+                          } catch(error){
+                            log("error $error");
+                          } finally{
+                            setState(() {
+                              _isTyping = false;
+                            });
+                           }
+                        }
 }
