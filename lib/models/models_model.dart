@@ -2,17 +2,19 @@ class ModelsModel{
   final String id;
   final int created;
   final String root;
+
 ModelsModel({
   required this.id,
   required this.created,
   required this.root
 });
+
 factory ModelsModel.fromJson(Map<String, dynamic> json) => ModelsModel(
     id: json["id"],
+    root: json["root"],
     created: json["created"],
-    root: json["root"]
-);
-    static List<ModelsModel> modelsFromSnapshot(List ModelSnapshot){
+ );
+    static List<ModelsModel> modelsFromSnapshot(List ModelSnapshot) {
       return ModelSnapshot.map((data) => ModelsModel.fromJson(data)).toList();
     }
 }

@@ -1,3 +1,4 @@
+import 'package:chat_gtp/providers/chats_provider.dart';
 import 'package:chat_gtp/providers/models_provider.dart';
 import 'package:chat_gtp/screens/chat_screen.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return  MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_)=> ModelsProvider(),),
+        ChangeNotifierProvider(
+          create: (_)=> ModelsProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_)=> ChatProvider(),
+    ),
       ],
       child: MaterialApp(
         title: 'Prince ChatGTP',
